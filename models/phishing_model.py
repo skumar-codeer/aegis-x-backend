@@ -1,20 +1,30 @@
-from transformers import pipeline
+import re
 
-classifier = pipeline(
-    "text-classification",
-    model="distilbert-base-uncased-finetuned-sst-2-english"
-)
+SUSPICIOUS_KEYWORDS = [
+    "urgent",
+    "verify",
+    "account suspended",
+    "click here",
+    "immediately",
+    "password",
+    "bank",
+    "otp",
+]
 
 def detect_phishing(text: str):
 
-    result = classifier(text)[0]
+    score = 0
+    found = []
 
-    score = result["score"] * 100
-    label = result["label"]
+    for word in SUSPICIOUS_KEYWORDS:
+        if re.search(word, text, re.IGNORECASE):
+            score += 15
+            found.append(word)
 
-    is_phishing = label == "NEGATIVE"
+    is_phishing = score >= 30
 
     return {
         "is_phishing": is_phishing,
-        "confidence": round(score, 2)
+        "confidence": min(score, 100),
+        "keywords": found
     }
